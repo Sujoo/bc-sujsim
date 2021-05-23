@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from sujsim.sim.actor import Actor
 
 import random
-from sujsim.core.items.gear_database import trinket
+from sujsim.core.items.gear_database import trinket, ring
 from sujsim.core.spells.buff_database import combat_buffs, debuffs
 from sujsim.sim.sim_log import LogEntry, LogType
 from sujsim.core.spells.buff import Buff
@@ -60,12 +60,12 @@ class MageCastEvent(Event):
                                                          source_actor=self.target_actor),
                                            execute_now=True)
             """
-            if (config->tirisfal_4set && spell->result == spell::CRIT)
+            if config->tirisfal_4set and cast_spell.result == spell::CRIT)
                 onBuffGain(make_shared<buff::ArcaneMadness>());
             """
         super().add_log(log_type=LogType.LOG_SPELL, text="{}'s {} is a {}".format(self.source_actor.character.name,
                                                                                   cast_spell.spell_type.value,
-                                                                                  cast_spell.result))
+                                                                                  cast_spell.result.name))
         self.source_actor.add_to_queue(ManaEvent(target_actor=self.target_actor,
                                                  source_actor=self.target_actor,
                                                  amount=cast_spell.mana_cost,
@@ -78,8 +78,13 @@ class MageCastEvent(Event):
                                                              source_actor=self.target_actor),
                                                execute_now=True)
         else:
-            self.spell_target.add_to_queue(HealthEvent(source_actor=self.source_actor, target_actor=self.spell_target, gain=False, cast_spell=cast_spell),
-                                           execute_now=True)
+            self.spell_target.add_to_queue(HealthEvent(source_actor=self.source_actor,
+                                                       target_actor=self.spell_target,
+                                                       gain=False,
+                                                       cast_spell=cast_spell,
+                                                       time=self.time - self.spell_target.current_time))  # this needs to be the amount of time to wait until it hits
+            # Do DoT checks
+            # if spell has dot, add recurring health event to the boss, or add a cast event (can't be a cast event)
             # Combustion
             if cast_spell.magic_school == MagicSchool.FIRE and self.source_actor.has_buff(combat_buffs.COMBUSTION):
                 if cast_spell.result == SpellResult.CRIT:
@@ -116,74 +121,143 @@ class MageCastEvent(Event):
                                                                      target_actor=self.target_actor,
                                                                      source_actor=self.target_actor),
                                                        execute_now=True)
+            if cast_spell.spell_type == MagicSchool.FROST and self.source_actor.character.mage_talents.winters_chill:
+                if self.source_actor.character.mage_talents.winters_chill == 5 or random.randrange(0,
+                4) < self.source_actor.character.mage_talents.winters_chill:
+                    self.spell_target.add_to_queue(GainBuffEvent(buff=debuffs.WINTERS_CHILL,
+                                                                 target_actor=self.target_actor,
+                                                                 source_actor=self.target_actor),
+                                                   execute_now=True)
             """
-            if (spell->school == SCHOOL_FROST && player->talents.winters_chill) {
-                if (player->talents.winters_chill == 5 || random<int>(0, 4) < player->talents.winters_chill)
-                    onDebuffGain(make_shared<debuff::WintersChill>());
-            }
-
-            if (spell->id == spell::FIREBALL)
-                pushDot(make_shared<dot::Fireball>());
-            if (spell->id == spell::PYROBLAST)
-                pushDot(make_shared<dot::Pyroblast>());
-
-            // 5% proc rate ?
-            if (hasTrinket(TRINKET_QUAGMIRRANS_EYE) && !state->hasCooldown(cooldown::QUAGMIRRANS_EYE) && random<int>(0, 19) == 0) {
-                onCooldownGain(make_shared<cooldown::QuagmirransEye>());
-                onBuffGain(make_shared<buff::QuagmirransEye>());
-            }
-            // 15% proc rate
-            if (hasTrinket(TRINKET_MARK_OF_DEFIANCE) && !state->hasCooldown(cooldown::MARK_OF_DEFIANCE) && random<int>(0, 99) < 15) {
-                onCooldownGain(make_shared<cooldown::MarkOfDefiance>());
-                onManaGain(random<double>(128, 173), "Mana Restore (Mark of Defiance)");
-            }
-            // 5% proc rate ?
-            if (config->spellstrike_set && random<int>(0, 19) == 0)
-                onBuffGain(make_shared<buff::Spellstrike>());
-            // 10% proc rate
-            if (config->eternal_sage && !state->hasCooldown(cooldown::ETERNAL_SAGE) && random<int>(0, 9) == 0) {
-                onCooldownGain(make_shared<cooldown::EternalSage>());
-                onBuffGain(make_shared<buff::EternalSage>());
-            }
-            // 5% proc rate, cannot refresh itself while up
-            if (config->wrath_of_cenarius && !state->hasCooldown(cooldown::SPELL_BLASTING) && random<int>(0, 19) == 0) {
-                onCooldownGain(make_shared<cooldown::SpellBlasting>());
-                onBuffGain(make_shared<buff::SpellBlasting>());
-            }
-            // 2% proc rate, mana-etched 4-set bonus
-            if (config->mana_etched_4set && random<int>(0, 49) == 0) {
-                onBuffGain(make_shared<buff::SpellPowerBonus>());
-            }
-            // 50% proc rate
-            if (config->judgement_of_wisdom && random<int>(0, 1) == 1)
-                onManaGain(74, "Judgement of Wisdom");
-
-            if (hasTrinket(TRINKET_DARKMOON_CRUSADE))
-                onBuffGain(make_shared<buff::DarkmoonCrusade>());
-
-            if (spell->result == spell::CRIT) {
-                // 20% proc rate
-                if (hasTrinket(TRINKET_UNSTABLE_CURRENTS) && !state->hasCooldown(cooldown::UNSTABLE_CURRENTS) && random<int>(0, 4) == 0) {
-                    onCooldownGain(make_shared<cooldown::UnstableCurrents>());
-                    onBuffGain(make_shared<buff::UnstableCurrents>());
-                }
-                // 20% proc rate
-                if (hasTrinket(TRINKET_NEXUS_HORN) && !state->hasCooldown(cooldown::CALL_OF_THE_NEXUS) && random<int>(0, 4) == 0) {
-                    onCooldownGain(make_shared<cooldown::CallOfTheNexus>());
-                    onBuffGain(make_shared<buff::CallOfTheNexus>());
-                }
-                // 100% proc rate
-                if (hasTrinket(TRINKET_LIGHTNING_CAPACITOR) && !state->hasCooldown(cooldown::LIGHTNING_CAPACITOR))
-                    onBuffGain(make_shared<buff::LightningCapacitor>());
-                // 50% proc rate
-                if (hasTrinket(TRINKET_ASHTONGUE_TALISMAN) && random<int>(0, 1) == 0)
-                    onBuffGain(make_shared<buff::AshtongueTalisman>());
-
-                if (spell->school == SCHOOL_FIRE && player->talents.ignite)
-                    addIgnite(spell);
-                if ((spell->school == SCHOOL_FIRE || spell->school == SCHOOL_FROST) && player->talents.master_of_elements)
-                    onManaGain(spell->cost * 0.1 * player->talents.master_of_elements, "Master of Elements");
+            if cast_spell.id == spell::FIREBALL)
+                pushDot(make_shared<dot::Fireball>())
+            if cast_spell.id == spell::PYROBLAST)
+                pushDot(make_shared<dot::Pyroblast>())
             """
+
+            # 5% proc rate ?
+            if self.source_actor.character.gear_stats.has_trinket(trinket.QUAGMIRRANS_EYE) and not self.source_actor.has_buff(
+                    combat_buffs.QUAGMIRRANS_EYE) and random.randrange(0, 19) == 0:
+                self.source_actor.add_to_queue(GainBuffEvent(buff=combat_buffs.QUAGMIRRANS_EYE,
+                                                             target_actor=self.target_actor,
+                                                             source_actor=self.target_actor),
+                                               execute_now=True)
+                self.source_actor.add_to_queue(GainBuffEvent(buff=debuffs.QUAGMIRRANS_EYE_COOLDOWN,
+                                                             target_actor=self.target_actor,
+                                                             source_actor=self.target_actor),
+                                               execute_now=True)
+
+            # 15% proc rate
+            if self.source_actor.character.gear_stats.has_trinket(trinket.MARK_OF_DEFIANCE) and not self.source_actor.has_buff(
+                    debuffs.MARK_OF_DEFIANCE_COOLDOWN) and random.randrange(0, 99) < 15:
+                self.source_actor.add_to_queue(GainBuffEvent(buff=debuffs.MARK_OF_DEFIANCE_COOLDOWN,
+                                                             target_actor=self.target_actor,
+                                                             source_actor=self.target_actor),
+                                               execute_now=True)
+                self.source_actor.add_to_queue(ManaEvent(target_actor=self.target_actor,
+                                                         source_actor=self.target_actor,
+                                                         amount=random.randrange(128, 173),
+                                                         gain=True),
+                                               execute_now=True)
+
+            # 5% proc rate ?
+            if self.source_actor.character.gear_stats.has_spellstrike() and random.randrange(0, 19) == 0:
+                self.source_actor.add_to_queue(GainBuffEvent(buff=combat_buffs.SPELLSTRIKE,
+                                                             target_actor=self.target_actor,
+                                                             source_actor=self.target_actor),
+                                               execute_now=True)
+            # 10% proc rate
+            if self.source_actor.character.gear_stats.has_ring(ring.BAND_OF_THE_ETERNAL_SAGE) and not self.source_actor.has_buff(combat_buffs.ETERNAL_SAGE) \
+                    and random.randrange(0, 9) == 0:
+                self.source_actor.add_to_queue(GainBuffEvent(buff=combat_buffs.ETERNAL_SAGE,
+                                                             target_actor=self.target_actor,
+                                                             source_actor=self.target_actor),
+                                               execute_now=True)
+                self.source_actor.add_to_queue(GainBuffEvent(buff=debuffs.ETERNAL_SAGE_COOLDOWN,
+                                                             target_actor=self.target_actor,
+                                                             source_actor=self.target_actor),
+                                               execute_now=True)
+
+            # 5% proc rate, cannot refresh itself while up
+            if self.source_actor.character.gear_stats.has_ring(ring.WRATH_OF_CENARIUS) and not self.source_actor.has_buff(combat_buffs.SPELL_BLASTING) and random.randrange(0, 19) == 0:
+                self.source_actor.add_to_queue(GainBuffEvent(buff=combat_buffs.SPELL_BLASTING,
+                                                             target_actor=self.target_actor,
+                                                             source_actor=self.target_actor),
+                                               execute_now=True)
+                self.source_actor.add_to_queue(GainBuffEvent(buff=debuffs.SPELL_BLASTING_COOLDOWN,
+                                                             target_actor=self.target_actor,
+                                                             source_actor=self.target_actor),
+                                               execute_now=True)
+
+            """
+            # 2% proc rate, mana-etched 4-set bonus
+            if config->mana_etched_4set and random.randrange(0, 49) == 0:
+                self.source_actor.add_to_queue(GainBuffEvent(buff=combat_buffs.SPELL_POWER_BONUS,
+                                                             target_actor=self.target_actor,
+                                                             source_actor=self.target_actor),
+                                               execute_now=True)
+            """
+
+            # 50% proc rate
+            if self.target_actor.has_buff(debuffs.JUDGEMENT_OF_WISDOM) and random.randrange(0, 1) == 1:
+                self.source_actor.add_to_queue(ManaEvent(target_actor=self.target_actor,
+                                                         source_actor=self.target_actor,
+                                                         amount=74,
+                                                         gain=True),
+                                               execute_now=True)
+
+            if self.source_actor.character.gear_stats.has_trinket(trinket.DARKMOON_CARD_CRUSADE):
+                self.source_actor.add_to_queue(GainBuffEvent(buff=combat_buffs.DARKMOON_CRUSADE,
+                                                             target_actor=self.target_actor,
+                                                             source_actor=self.target_actor),
+                                               execute_now=True)
+
+            if cast_spell.result == SpellResult.CRIT:
+                # 20% proc rate
+                if self.source_actor.character.gear_stats.has_trinket(trinket.SEXTANT_OF_UNSTABLE_CURRENTS) and not self.source_actor.has_buff(
+                        combat_buffs.UNSTABLE_CURRENTS) and random.randrange(0, 4) == 0:
+                    self.source_actor.add_to_queue(GainBuffEvent(buff=combat_buffs.UNSTABLE_CURRENTS,
+                                                                 target_actor=self.target_actor,
+                                                                 source_actor=self.target_actor),
+                                                   execute_now=True)
+                    self.source_actor.add_to_queue(GainBuffEvent(buff=debuffs.UNSTABLE_CURRENTS_COOLDOWN,
+                                                                 target_actor=self.target_actor,
+                                                                 source_actor=self.target_actor),
+                                                   execute_now=True)
+                # 20% proc rate
+                if self.source_actor.character.gear_stats.has_trinket(trinket.SHIFFARS_NEXUS_HORN) and not self.source_actor.has_buff(
+                        combat_buffs.CALL_OF_THE_NEXUS) and random.randrange(0, 4) == 0:
+                    self.source_actor.add_to_queue(GainBuffEvent(buff=combat_buffs.CALL_OF_THE_NEXUS,
+                                                                 target_actor=self.target_actor,
+                                                                 source_actor=self.target_actor),
+                                                   execute_now=True)
+                    self.source_actor.add_to_queue(GainBuffEvent(buff=debuffs.CALL_OF_THE_NEXUS_COOLDOWN,
+                                                                 target_actor=self.target_actor,
+                                                                 source_actor=self.target_actor),
+                                                   execute_now=True)
+                # 100% proc rate
+                if self.source_actor.character.gear_stats.has_trinket(trinket.THE_LIGHTNING_CAPACITOR) and not self.source_actor.has_buff(combat_buffs.LIGHTNING_CAPACITOR):
+                    self.source_actor.add_to_queue(GainBuffEvent(buff=combat_buffs.LIGHTNING_CAPACITOR,
+                                                                 target_actor=self.target_actor,
+                                                                 source_actor=self.target_actor),
+                                                   execute_now=True)
+                # 50% proc rate
+                if self.source_actor.character.gear_stats.has_trinket(trinket.ASHTONGUE_TALISMAN_MAGE) and random.randrange(0, 1) == 0:
+                    self.source_actor.add_to_queue(GainBuffEvent(buff=combat_buffs.ASHTONGUE_TALISMAN,
+                                                                 target_actor=self.target_actor,
+                                                                 source_actor=self.target_actor),
+                                                   execute_now=True)
+
+                if cast_spell.spell_type == MagicSchool.FIRE and self.source_actor.character.mage_talents.ignite:
+                    # addIgnite(spell)
+                    pass
+                if (cast_spell.spell_type == MagicSchool.FIRE or cast_spell.spell_type == MagicSchool.FROST) and \
+                        self.source_actor.character.mage_talents.master_of_elements:
+                    self.source_actor.add_to_queue(ManaEvent(target_actor=self.target_actor,
+                                                             source_actor=self.target_actor,
+                                                             amount=cast_spell.mana_cost * 0.1 * self.source_actor.character.mage_talents.master_of_elements,
+                                                             gain=True),
+                                                   execute_now=True)
 
         # Check for buffs to remove and new procs
         self._execute_clearcasting()
@@ -260,8 +334,8 @@ class ManaEvent(Event):
 
 
 class HealthEvent(Event):
-    def __init__(self, source_actor: Actor, target_actor: Actor, cast_spell: CastSpell, gain: bool):
-        super().__init__(time=0, target_actor=target_actor, source_actor=source_actor)
+    def __init__(self, time, source_actor: Actor, target_actor: Actor, cast_spell: CastSpell, gain: bool):
+        super().__init__(time=time, target_actor=target_actor, source_actor=source_actor)
         self.gain = gain
         self.cast_spell = cast_spell
 
@@ -273,7 +347,7 @@ class HealthEvent(Event):
             self.target_actor.character.stats.current_health -= self.cast_spell.damage
         super().add_log(log_type=LogType.LOG_DAMAGE, text="{}'s {} {}s {} for {}".format(self.source_actor.character.name,
                                                                                          self.cast_spell.spell_type.value,
-                                                                                         self.cast_spell.result,
+                                                                                         self.cast_spell.result.name,
                                                                                          self.target_actor.character.name,
                                                                                          self.cast_spell.damage))
 

@@ -67,6 +67,12 @@ class GearStats(object):
         else:
             return False
 
+    def has_ring(self, ring: Gear) -> bool:
+        if ring.db_id == self.ring_1.db_id or ring.db_id == self.ring_2.db_id:
+            return True
+        else:
+            return False
+
     def has_ember_skyfire_meta_gem(self) -> bool:
         return False
 
@@ -77,4 +83,7 @@ class GearStats(object):
         return False
 
     def has_spellfire_set(self) -> bool:
+        return False
+
+    def has_spellstrike(self) -> bool:
         return False

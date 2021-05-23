@@ -58,7 +58,7 @@ class SpellStats:
 
     @spell_hit_chance.setter
     def spell_hit_chance(self, value):
-        self._spell_hit_chance = round(value, 2)
+        self._spell_hit_chance = round(value, 4)
 
     @property
     def spell_crit_chance(self):
@@ -66,7 +66,7 @@ class SpellStats:
 
     @spell_crit_chance.setter
     def spell_crit_chance(self, value):
-        self._spell_crit_chance = round(value, 2)
+        self._spell_crit_chance = round(value, 4)
 
     @property
     def spell_haste(self):
@@ -74,7 +74,7 @@ class SpellStats:
 
     @spell_haste.setter
     def spell_haste(self, value):
-        self._spell_haste = round(value, 2)
+        self._spell_haste = round(value, 4)
 
 
 def get_new_spell_stats_dict() -> Dict[MagicSchool, SpellStats]:

@@ -98,7 +98,7 @@ class Character(object):
 
     def get_buff(self, buff: Buff) -> Buff:
         for search_buff in self.buffs:
-            if search_buff.db_id == buff.db_id:
+            if search_buff.db_id == buff.db_id and search_buff.name == buff.name:
                 return search_buff
         return None
 
@@ -303,7 +303,7 @@ class Character(object):
             return 0
 
         spell_cost_multiplier = 1
-        if spell.spell_type == MageSpells.ARCANE_BLAST:
+        if spell.spell_type == MageSpells.ARCANE_BLAST and self.has_buff(combat_buffs.ARCANE_BLAST):
             spell_cost_multiplier += 0.75 * self.get_buff(combat_buffs.ARCANE_BLAST).stacks
             """
             TODO:

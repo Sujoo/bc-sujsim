@@ -54,7 +54,8 @@ class PlayerStats:
         merge_item_stats(self, gear_stats.stats)
         self.merge_mage_talents(mage_talents)
         for buff in buffs:
-            merge_item_stats(self, buff.stats, modifier=buff.stacks)
+            if buff.stats:
+                merge_item_stats(self, buff.stats, modifier=buff.stacks)
 
         # Finalize Attribute Multipliers
         self.intellect *= 1.0 + mage_talents.arcane_mind * 0.03
@@ -62,12 +63,13 @@ class PlayerStats:
             self.intellect *= 1.05
         if race == Race.HUMAN:
             self.spirit *= 1.1
-        if BLESSING_OF_KINGS in buffs:
-            self.intellect *= 1.1
-            self.spirit *= 1.1
-            self.stamina *= 1.1
         if gear_stats.has_ember_skyfire_meta_gem():
             self.intellect *= 1.02
+        for buff in buffs:
+            if buff.db_id == BLESSING_OF_KINGS.db_id:
+                self.intellect *= 1.1
+                self.spirit *= 1.1
+                self.stamina *= 1.1
 
         for spell_stats in self.spell_stats_dict.values():
             spell_stats.set_int_crit_rating(self.intellect)

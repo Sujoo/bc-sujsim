@@ -78,27 +78,30 @@ class SimulatorTest(TestCase):
         expected = ['[0.0] LOG_BUFF: GCD[1] gained',
                     '[0.0] LOG_BUFF: Casting 5 Second Rule[1] gained',
                     '[1.5] LOG_BUFF: GCD lost',
-                    '[2.0] LOG_MANA: Mana Regen',
-                    '[3.0] LOG_SPELL: Fireball',
+                    '[2.0] LOG_MANA: 28 Mana Regen',
+                    "[3.0] LOG_SPELL: Sujoo's Fireball is a MISS",
+                    '[3.0] LOG_MANA: 465 Mana Lost',
                     '[3.0] LOG_BUFF: GCD[1] gained',
                     '[3.0] LOG_BUFF: Casting 5 Second Rule[1] refreshed',
-                    '[4.0] LOG_MANA: Mana Regen',
+                    '[4.0] LOG_MANA: 28 Mana Regen',
                     '[4.5] LOG_BUFF: GCD lost',
-                    '[6.0] LOG_SPELL: Fireball',
+                    '[5.0] LOG_WAIT: Waiting',
+                    "[6.0] LOG_SPELL: Sujoo's Fireball is a HIT",
+                    '[6.0] LOG_MANA: 465 Mana Lost',
                     '[6.0] LOG_BUFF: GCD[1] gained',
-                    '[6.0] LOG_MANA: Mana Regen',
+                    "[6.0] LOG_DAMAGE: Sujoo's Fireball HITs Boss for 1270",
+                    '[6.0] LOG_MANA: 28 Mana Regen',
                     '[6.0] LOG_BUFF: Casting 5 Second Rule[1] refreshed',
                     '[7.5] LOG_BUFF: GCD lost',
-                    '[8.0] LOG_MANA: Mana Regen',
-                    '[9.0] LOG_SPELL: Fireball',
-                    '[9.0] LOG_BUFF: GCD[1] gained',
-                    '[9.0] LOG_BUFF: Casting 5 Second Rule[1] refreshed',
-                    '[10.0] LOG_MANA: Mana Regen']
-        character = get_character()
-        player = Actor(character=character, decision_model_class=FireballSpam)
-        character = get_character()
-        boss = Actor(character=character, decision_model_class=DoNothing)
-        sim = Simulation(player=player, boss=boss, end_of_simulation=10)
+                    '[8.0] LOG_MANA: 28 Mana Regen',
+                    "[9.0] LOG_SPELL: Sujoo's Fireball is a CRIT",
+                    '[9.0] LOG_MANA: 465 Mana Lost',
+                    "[9.0] LOG_DAMAGE: Sujoo's Fireball CRITs Boss for 2079",
+                    '[10.0] LOG_WAIT: Waiting',
+                    '[10.0] LOG_MANA: 28 Mana Regen']
+        player = Actor(character=get_character(), decision_model_class=FireballSpam)
+        boss = Actor(character=get_boss(), decision_model_class=DoNothing)
+        sim = Simulation(player=player, boss=boss, end_of_simulation=10, seed=15)
         sim.run()
 
         self.assertEqual(expected, [str(log_entry) for log_entry in sim.logs])
@@ -108,65 +111,69 @@ class SimulatorTest(TestCase):
         expected = ['[0.0] LOG_BUFF: GCD[1] gained',
                     '[0.0] LOG_BUFF: Casting 5 Second Rule[1] gained',
                     '[1.5] LOG_BUFF: GCD lost',
-                    '[2.0] LOG_MANA: Mana Regen',
+                    '[2.0] LOG_MANA: 28 Mana Regen',
                     '[2.5] LOG_BUFF: Arcane Blast[1] gained',
-                    '[2.5] LOG_SPELL: Arcane Blast',
+                    "[2.5] LOG_SPELL: Sujoo's Arcane Blast is a HIT",
+                    '[2.5] LOG_MANA: 195 Mana Lost',
                     '[2.5] LOG_BUFF: GCD[1] gained',
+                    "[2.5] LOG_DAMAGE: Sujoo's Arcane Blast HITs Sujoo for 840",
                     '[2.5] LOG_BUFF: Casting 5 Second Rule[1] refreshed',
                     '[4.0] LOG_BUFF: GCD lost',
-                    '[4.0] LOG_MANA: Mana Regen',
+                    '[4.0] LOG_MANA: 28 Mana Regen',
                     '[4.67] LOG_BUFF: Arcane Blast[2] gained',
-                    '[4.67] LOG_SPELL: Arcane Blast',
+                    "[4.67] LOG_SPELL: Sujoo's Arcane Blast is a HIT",
+                    '[4.67] LOG_MANA: 341 Mana Lost',
                     '[4.67] LOG_BUFF: GCD[1] gained',
+                    "[4.67] LOG_DAMAGE: Sujoo's Arcane Blast HITs Sujoo for 1022",
                     '[4.67] LOG_BUFF: Casting 5 Second Rule[1] refreshed',
-                    '[6.0] LOG_MANA: Mana Regen',
+                    '[5.0] LOG_WAIT: Waiting',
+                    '[6.0] LOG_MANA: 28 Mana Regen',
                     '[6.17] LOG_BUFF: GCD lost',
                     '[6.5] LOG_BUFF: Arcane Blast[3] gained',
-                    '[6.5] LOG_SPELL: Arcane Blast',
+                    "[6.5] LOG_SPELL: Sujoo's Arcane Blast is a CRIT",
+                    '[6.5] LOG_MANA: 488 Mana Lost',
                     '[6.5] LOG_BUFF: GCD[1] gained',
+                    "[6.5] LOG_DAMAGE: Sujoo's Arcane Blast CRITs Sujoo for 1559",
                     '[6.5] LOG_BUFF: Casting 5 Second Rule[1] refreshed',
                     '[8.0] LOG_BUFF: GCD lost',
-                    '[8.0] LOG_MANA: Mana Regen',
+                    '[8.0] LOG_MANA: 28 Mana Regen',
                     '[8.0] LOG_BUFF: Arcane Blast[3] refreshed',
-                    '[8.0] LOG_SPELL: Arcane Blast',
+                    "[8.0] LOG_SPELL: Sujoo's Arcane Blast is a HIT",
+                    '[8.0] LOG_MANA: 634 Mana Lost',
                     '[8.0] LOG_BUFF: GCD[1] gained',
+                    "[8.0] LOG_DAMAGE: Sujoo's Arcane Blast HITs Sujoo for 1092",
                     '[8.0] LOG_BUFF: Casting 5 Second Rule[1] refreshed',
                     '[9.5] LOG_BUFF: GCD lost',
                     '[9.5] LOG_BUFF: Arcane Blast[3] refreshed',
-                    '[9.5] LOG_SPELL: Arcane Blast',
+                    "[9.5] LOG_SPELL: Sujoo's Arcane Blast is a HIT",
+                    '[9.5] LOG_MANA: 634 Mana Lost',
                     '[9.5] LOG_BUFF: GCD[1] gained',
+                    "[9.5] LOG_DAMAGE: Sujoo's Arcane Blast HITs Sujoo for 1117",
                     '[9.5] LOG_BUFF: Casting 5 Second Rule[1] refreshed',
-                    '[10.0] LOG_MANA: Mana Regen',
+                    '[10.0] LOG_WAIT: Waiting',
+                    '[10.0] LOG_MANA: 28 Mana Regen',
                     '[11.0] LOG_BUFF: GCD lost',
                     '[11.0] LOG_BUFF: Arcane Blast[3] refreshed',
-                    '[11.0] LOG_SPELL: Arcane Blast',
-                    '[11.0] LOG_BUFF: GCD[1] gained',
-                    '[11.0] LOG_BUFF: Casting 5 Second Rule[1] refreshed',
-                    '[12.0] LOG_MANA: Mana Regen']
+                    "[11.0] LOG_SPELL: Sujoo's Arcane Blast is a CRIT",
+                    '[11.0] LOG_MANA: 634 Mana Lost',
+                    "[11.0] LOG_DAMAGE: Sujoo's Arcane Blast CRITs Sujoo for 1648",
+                    '[12.0] LOG_MANA: 28 Mana Regen']
         character = get_character()
         player = Actor(character=character, decision_model_class=ArcaneSpam)
         character = get_character()
         boss = Actor(character=character, decision_model_class=DoNothing)
-        sim = Simulation(player=player, boss=boss, end_of_simulation=12)
+        sim = Simulation(player=player, boss=boss, end_of_simulation=12, seed=5)
         sim.run()
 
         self.assertEqual(expected, [str(log_entry) for log_entry in sim.logs])
-        self.assertEqual(7426, player.character.stats.current_mana)
+        self.assertEqual(5670, player.character.stats.current_mana)
 
     def test_sim_gcd(self):
         expected = ['[0.0] LOG_BUFF: GCD[1] gained',
                     '[0.0] LOG_BUFF: Casting 5 Second Rule[1] gained',
-                    '[0.5] LOG_SPELL: GCD Spell',
-                    '[0.55] LOG_WAIT: Waiting',
-                    '[0.6] LOG_WAIT: Waiting',
-                    '[0.65] LOG_WAIT: Waiting',
-                    '[0.7] LOG_WAIT: Waiting',
-                    '[0.75] LOG_WAIT: Waiting',
-                    '[0.8] LOG_WAIT: Waiting',
-                    '[0.85] LOG_WAIT: Waiting',
-                    '[0.9] LOG_WAIT: Waiting',
-                    '[0.95] LOG_WAIT: Waiting',
-                    '[1.0] LOG_WAIT: Waiting',
+                    "[1.0] LOG_SPELL: Sujoo's GCD Spell is a HIT",
+                    '[1.0] LOG_MANA: 0 Mana Lost',
+                    "[1.0] LOG_DAMAGE: Sujoo's GCD Spell HITs Sujoo for 0",
                     '[1.05] LOG_WAIT: Waiting',
                     '[1.1] LOG_WAIT: Waiting',
                     '[1.15] LOG_WAIT: Waiting',
@@ -177,9 +184,7 @@ class SimulatorTest(TestCase):
                     '[1.4] LOG_WAIT: Waiting',
                     '[1.45] LOG_WAIT: Waiting',
                     '[1.5] LOG_BUFF: GCD lost',
-                    '[1.5] LOG_BUFF: GCD[1] gained',
-                    '[1.5] LOG_WAIT: Waiting',
-                    '[1.5] LOG_BUFF: Casting 5 Second Rule[1] refreshed']
+                    '[1.5] LOG_WAIT: Waiting']
         character = get_character()
         player = Actor(character=character, decision_model_class=FakeTestingSpam)
         character = get_character()

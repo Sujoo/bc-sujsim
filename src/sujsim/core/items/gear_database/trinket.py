@@ -31,6 +31,7 @@ SERPENT_COIL_BRAID = Gear(db_id=30720, name="Serpent-Coil Braid", phase=2, stats
 # Phase 3
 THE_SKULL_OF_GULDAN = Gear(db_id=32483, name="The Skull of Gul'dan", phase=3, stats=ItemStats(spell_power=55, spell_hit_rating=25))
 DARKMOON_CARD_CRUSADE = Gear(db_id=31856, name="Darkmoon Card Crusade", phase=3, stats=ItemStats())
+ASHTONGUE_TALISMAN_MAGE = Gear(db_id=32488, name="Ashtongue Talisman of Insigh", phase=3, stats=ItemStats())
 
 # Phase 4
 HEX_SHRUNKEN_HEAD = Gear(db_id=33829, name="Hex Shrunken Head", phase=4, stats=ItemStats(spell_power=53))

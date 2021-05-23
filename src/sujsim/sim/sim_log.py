@@ -9,6 +9,7 @@ class LogType(Enum):
     LOG_DOT = auto()
     LOG_DEBUG = auto()
     LOG_WAIT = auto()
+    LOG_DAMAGE = auto()
 
 
 class LogEntry:

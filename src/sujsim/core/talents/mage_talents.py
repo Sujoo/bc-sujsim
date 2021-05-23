@@ -104,56 +104,56 @@ class MageTalents():
                 self.slow = arcane_talent_int
 
         fire_talent_ints = talent_tree_ints[1]
-        for i, fire_talent_ints in enumerate(fire_talent_ints):
+        for i, fire_talent_int in enumerate(fire_talent_ints):
             if i == 0:
-                self.imp_fireball = fire_talent_ints
+                self.imp_fireball = fire_talent_int
             elif i == 2:
-                self.ignite = fire_talent_ints
+                self.ignite = fire_talent_int
             elif i == 5:
-                self.incinerate = fire_talent_ints
+                self.incinerate = fire_talent_int
             elif i == 7:
-                self.pyroblast = fire_talent_ints
+                self.pyroblast = fire_talent_int
             elif i == 9:
-                self.imp_scorch = fire_talent_ints
+                self.imp_scorch = fire_talent_int
             elif i == 11:
-                self.master_of_elements = fire_talent_ints
+                self.master_of_elements = fire_talent_int
             elif i == 12:
-                self.playing_with_fire = fire_talent_ints
+                self.playing_with_fire = fire_talent_int
             elif i == 13:
-                self.critical_mass = fire_talent_ints
+                self.critical_mass = fire_talent_int
             elif i == 16:
-                self.fire_power = fire_talent_ints
+                self.fire_power = fire_talent_int
             elif i == 17:
-                self.pyromaniac = fire_talent_ints
+                self.pyromaniac = fire_talent_int
             elif i == 18:
-                self.combustion = fire_talent_ints
+                self.combustion = fire_talent_int
             elif i == 19:
-                self.molten_fury = fire_talent_ints
+                self.molten_fury = fire_talent_int
             elif i == 20:
-                self.empowered_fireball = fire_talent_ints
+                self.empowered_fireball = fire_talent_int
 
         frost_talent_ints = talent_tree_ints[2]
-        for i, frost_talent_ints in enumerate(frost_talent_ints):
+        for i, frost_talent_int in enumerate(frost_talent_ints):
             if i == 1:
-                self.imp_frostbolt = 0
+                self.imp_frostbolt = frost_talent_int
             elif i == 2:
-                self.elemental_precision = 0
+                self.elemental_precision = frost_talent_int
             elif i == 3:
-                self.ice_shards = 0
+                self.ice_shards = frost_talent_int
             elif i == 7:
-                self.piercing_ice = 0
+                self.piercing_ice = frost_talent_int
             elif i == 8:
-                self.icy_veins = 0
+                self.icy_veins = frost_talent_int
             elif i == 11:
-                self.frost_channeling = 0
+                self.frost_channeling = frost_talent_int
             elif i == 14:
-                self.cold_snap = 0
+                self.cold_snap = frost_talent_int
             elif i == 17:
-                self.winters_chill = 0
+                self.winters_chill = frost_talent_int
             elif i == 19:
-                self.arctic_winds = 0
+                self.arctic_winds = frost_talent_int
             elif i == 20:
-                self.empowered_frostbolt = 0
+                self.empowered_frostbolt = frost_talent_int
 
 
 def parse_wowhead_calculator_string(wowhead_calculator_string: str) -> List[List[int]]:

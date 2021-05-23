@@ -23,34 +23,36 @@ class Actor:
         self.logs = []  # List[LogEntry]
         self.event_queue = []  # List[Event]
 
-    def setup(self, logs: List[LogEntry], end_of_simulation: int, boss):
+    def setup(self, logs: List[LogEntry], end_of_simulation: int, boss, start_mana_regen: bool = True):
         self.logs = logs
         self.end_of_simulation = end_of_simulation
         self.decision_model = self.decision_model_class(player=self, boss=boss)
-        self.add_to_queue(ManaRegenEvent(2, source_actor=self, target_actor=self))
+        if start_mana_regen:
+            self.add_to_queue(ManaRegenEvent(2, source_actor=self, target_actor=self))
         self.queue_next_action()
 
     def queue_next_action(self):
         self.add_to_queue(self.decision_model.get_next_action())
 
     def add_to_queue(self, event: Event, execute_now: bool = False):
-        if execute_now:
-            if event.time > 0:
-                raise ValueError('Event trying to "excute_now" has event time great than 0, this will jump the actor into the future - NO.')
-            event.execute()
-        elif event.time <= self.end_of_simulation:
-            event.time += self.current_time  # This is the key to moving time forward
-            self.event_queue.append(event)
-            self.event_queue.sort(key=lambda x: x.time)
+        if execute_now and event.time > 0:
+            raise ValueError('You cannot execute an event now when the time of the event executing is > 0.')
+        event.time += self.current_time  # This is the key to moving time forward
+        if event.time <= self.end_of_simulation:
+            if execute_now:
+                event.execute()
+            else:
+                self.event_queue.append(event)
+                self.event_queue.sort(key=lambda x: x.time)
 
-        # When you start casting, check if the spell being cast sets off the GCD
-        if isinstance(event, MageCastEvent) and event.spell.does_trigger_gcd:
-            self.add_to_queue(GainBuffEvent(buff=create_gcd(duration=self.character.calculate_cast_time(GCD_SPELL)),
-                                            source_actor=event.source_actor,
-                                            target_actor=event.source_actor), execute_now=True)
-            self.add_to_queue(GainBuffEvent(buff=CASTING_5_SECOND_RULE,
-                                            source_actor=event.source_actor,
-                                            target_actor=event.source_actor))
+                # When you start casting, check if the spell being cast sets off the GCD
+                if isinstance(event, MageCastEvent) and event.spell.does_trigger_gcd:
+                    self.add_to_queue(GainBuffEvent(buff=create_gcd(duration=self.character.calculate_cast_time(GCD_SPELL)),
+                                                    source_actor=event.source_actor,
+                                                    target_actor=event.source_actor), execute_now=True)
+                    self.add_to_queue(GainBuffEvent(buff=CASTING_5_SECOND_RULE,
+                                                    source_actor=event.source_actor,
+                                                    target_actor=event.source_actor))
 
     def remove_lose_buff_event_from_queue(self, event: GainBuffEvent):
         found_event = None

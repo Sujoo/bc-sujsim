@@ -42,9 +42,9 @@ class PlayerTest(TestCase):
         self.assertEqual(237, player.stats.spirit)
         self.assertEqual(492, player.stats.spell_stats_dict[MagicSchool.FIRE].spell_power)
         self.assertEqual(55, player.stats.spell_stats_dict[MagicSchool.FIRE].spell_hit_rating)
-        self.assertEqual(0.87, player.stats.spell_stats_dict[MagicSchool.FIRE].spell_hit_chance)
+        self.assertEqual(0.8736, player.stats.spell_stats_dict[MagicSchool.FIRE].spell_hit_chance)
         self.assertEqual(330, player.stats.spell_stats_dict[MagicSchool.FIRE].spell_crit_rating)
-        self.assertEqual(14.95, player.stats.spell_stats_dict[MagicSchool.FIRE].spell_crit_chance)
+        self.assertEqual(0.1495, player.stats.spell_stats_dict[MagicSchool.FIRE].spell_crit_chance)
         self.assertEqual(0, player.stats.spell_stats_dict[MagicSchool.FIRE].spell_haste_rating)
         self.assertEqual(0, player.stats.mp_5)
 
@@ -57,7 +57,7 @@ class PlayerTest(TestCase):
         self.assertEqual(473, player.stats.intellect)
         self.assertEqual(9056, player.stats.max_mana)
         self.assertEqual(342, player.stats.spell_stats_dict[MagicSchool.ARCANE].spell_crit_rating)
-        self.assertEqual(15.49, player.stats.spell_stats_dict[MagicSchool.ARCANE].spell_crit_chance)
+        self.assertEqual(0.1549, player.stats.spell_stats_dict[MagicSchool.ARCANE].spell_crit_chance)
 
     def test_buffs_spirit(self):
         player = Character(name='Sujoo',
@@ -85,6 +85,5 @@ class PlayerTest(TestCase):
                            mage_talents=MageTalents('--'),
                            buffs=[combat_buffs.ICY_VEINS,
                                   combat_buffs.ARCANE_BLAST, combat_buffs.ARCANE_BLAST, combat_buffs.ARCANE_BLAST])
-        player.calculate_cast_time(mage_spells.GCD_SPELL)
-        player.calculate_cast_time(mage_spells.ARCANE_BLAST_R1)
-        self.assertEqual('This test case is complete', 'No, but it would be good to have more test cases around spell cast calculations')
+        self.assertEqual(1.25, player.calculate_cast_time(mage_spells.GCD_SPELL))
+        self.assertEqual(1.25, player.calculate_cast_time(mage_spells.ARCANE_BLAST_R1))
