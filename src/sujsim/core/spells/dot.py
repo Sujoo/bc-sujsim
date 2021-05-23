@@ -1,22 +1,27 @@
+from sujsim.core.spells.magic_school import MagicSchool
+
+
 class Dot:
     def __init__(self,
                  db_id: int,
                  name: str,
+                 magic_school: MagicSchool,
                  damage: float,
-                 ticks: int = 1,
-                 tick: int = 0,
+                 max_ticks: int = 1,
+                 current_tick: int = 0,
                  tick_interval: float = 3,
                  is_stackable: bool = False):
         self.db_id = db_id
         self.name = name
+        self.magic_school = magic_school
         self.damage = damage
-        self.ticks = ticks
-        self.tick = tick
-        self.tick_intervale = tick_interval
+        self.max_ticks = max_ticks
+        self.current_tick = current_tick
+        self.tick_interval = tick_interval
         self.is_stackable = is_stackable
 
     def do_tick(self):
-        self.tick += 1
+        self.current_tick += 1
 
     def stack(self):
         return
@@ -32,9 +37,9 @@ class Ignite(Dot):
               is_stackable=True)
 
     def stack(self, damage: float):
-        if self.tick == 0:
+        if self.current_tick == 0:
             self.damage += damage
-        elif self.tick == 1:
+        elif self.current_tick == 1:
             self.damage = damage + round(self.damage / 2)
         else:
             self.damage

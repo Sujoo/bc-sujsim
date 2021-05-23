@@ -7,8 +7,8 @@ from sujsim.core.stats.item_stats import ItemStats
 GENERALS_SILK_CUFFS = Gear(db_id=28411, name="General's Silk Cuffs", sockets=['y'], bonus=ItemStats(spell_power=2), stats=ItemStats(intellect=17,
                                                                                                                                     spell_power=20,
                                                                                                                                     spell_crit_rating=12))
-BRACERS_OF_HAVOK = Gear(db_id=24250, name="Bracers of Havok", sockets=['y'], bonus=ItemStats(spell_crit_rating=2),
-                        stats=ItemStats(intellect=12, spell_power=30))
+BRACERS_OF_HAVOK = Gear(db_id=24250, name="Bracers of Havok", sockets=['y'], bonus=ItemStats(spell_crit_rating=2), stats=ItemStats(intellect=12,
+                                                                                                                                   spell_power=30))
 BANDS_OF_NEFARIOUS_DEEDS = Gear(db_id=28515, name="Bands of Nefarious Deeds", stats=ItemStats(intellect=22, spell_power=32))
 CRIMSON_BRACERS_OF_GLOOM = Gear(db_id=27462, name="Crimson Bracers of Gloom", stats=ItemStats(intellect=18, spell_power=22, spell_hit_rating=12))
 BANDS_OF_NEGATION = Gear(db_id=29240, name="Bands of Negation", stats=ItemStats(intellect=22, spell_power=29))

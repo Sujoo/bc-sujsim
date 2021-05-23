@@ -46,8 +46,8 @@ class Character(object):
             stats.intellect = 147
             stats.spirit = 146
         elif self.race == Race.BLOOD_ELF:
-            stats.intellect = 149
-            stats.spirit = 150
+            stats.intellect = 155
+            stats.spirit = 144
         elif self.race == Race.HUMAN:
             stats.intellect = 151
             stats.spirit = 145
@@ -116,9 +116,11 @@ class Character(object):
 
         cast_time = round(cast_time * self.calculate_spell_haste(spell.magic_school), 2)
 
-        # TODO: Double check that GCD can only go down to 1 second
+        """
+        # As of 5/23/21 GCD can be less than 1 sec, so not using this code anymore
         if spell.spell_type == MageSpells.GCD:
             cast_time = max(1, cast_time)
+        """
 
         return cast_time
 
@@ -177,7 +179,7 @@ class Character(object):
                          spell_type=spell.spell_type,
                          rank=spell.rank,
                          magic_school=spell.magic_school,
-                         ticks=spell.ticks,
+                         max_ticks=spell.max_ticks,
                          dot=spell.dot,
                          is_aoe=spell.is_aoe,
                          is_channeling=spell.is_channeling,
@@ -231,7 +233,7 @@ class Character(object):
             spell_coefficient += self.mage_talents.empowered_frostbolt * 0.02
 
         if spell.is_channeling:
-            spell_coefficient /= spell.ticks
+            spell_coefficient /= spell.max_ticks
 
         damage += spell_power * spell_coefficient
 

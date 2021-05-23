@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from sujsim.ai.decision_model import FireballSpam, ArcaneSpam, DoNothing, FakeTestingSpam
+from sujsim.ai.decision_model import FireballSpam, ArcaneBlastSpam, DoNothing, FakeTestingSpam, ArcaneMissleSpam, EvocateSpam
 from sujsim.core.spells.buff_database import combat_buffs, player_buffs
 from sujsim.core.items.gear_database import head, neck, back, wrist, weapon, off_hand, hands, wand, legs, feet, ring, waist, shoulder, chest, trinket
 from sujsim.core.stats.gear_stats import GearStats
@@ -11,7 +11,7 @@ from sujsim.sim.actor import Actor
 from sujsim.sim.simulation import Simulation
 
 
-def get_character() -> Character:
+def get_character(talents='-5-') -> Character:
     gear_stats = GearStats(head=head.INCANTERS_COWL,
                            neck=neck.BROOCH_OF_HEIGHTENED_POTENTIAL,
                            shoulder=shoulder.INCANTERS_PAULDRONS,
@@ -29,7 +29,7 @@ def get_character() -> Character:
                            ring_2=ring.RING_OF_CONFLICT_SURVIVAL,
                            trinket_1=trinket.FIGURINE_LIVING_RUBY_SERPENT,
                            trinket_2=trinket.SHIFFARS_NEXUS_HORN)
-    return Character(name='Sujoo', race=Race.UNDEAD, gear_stats=gear_stats, mage_talents=MageTalents('-5-'), buffs=[player_buffs.MAGE_ARMOR])
+    return Character(name='Sujoo', race=Race.UNDEAD, gear_stats=gear_stats, mage_talents=MageTalents(talents), buffs=[player_buffs.MAGE_ARMOR])
 
 
 def get_boss() -> Character:
@@ -99,9 +99,11 @@ class SimulatorTest(TestCase):
                     "[9.0] LOG_DAMAGE: Sujoo's Fireball CRITs Boss for 2079",
                     '[10.0] LOG_WAIT: Waiting',
                     '[10.0] LOG_MANA: 28 Mana Regen']
-        player = Actor(character=get_character(), decision_model_class=FireballSpam)
+        player = get_character(talents='05-505002012003-003')
+        player.add_buff(combat_buffs.DEBUG)
+        player = Actor(character=player, decision_model_class=FireballSpam)
         boss = Actor(character=get_boss(), decision_model_class=DoNothing)
-        sim = Simulation(player=player, boss=boss, end_of_simulation=10, seed=15)
+        sim = Simulation(player=player, boss=boss, end_of_simulation=15, seed=8)
         sim.run()
 
         self.assertEqual(expected, [str(log_entry) for log_entry in sim.logs])
@@ -159,7 +161,7 @@ class SimulatorTest(TestCase):
                     "[11.0] LOG_DAMAGE: Sujoo's Arcane Blast CRITs Sujoo for 1648",
                     '[12.0] LOG_MANA: 28 Mana Regen']
         character = get_character()
-        player = Actor(character=character, decision_model_class=ArcaneSpam)
+        player = Actor(character=character, decision_model_class=ArcaneBlastSpam)
         character = get_character()
         boss = Actor(character=character, decision_model_class=DoNothing)
         sim = Simulation(player=player, boss=boss, end_of_simulation=12, seed=5)
@@ -190,6 +192,28 @@ class SimulatorTest(TestCase):
         character = get_character()
         boss = Actor(character=character, decision_model_class=DoNothing)
         sim = Simulation(player=player, boss=boss, end_of_simulation=1.9)
+        sim.run()
+
+        self.assertEqual(expected, [str(log_entry) for log_entry in sim.logs])
+        self.assertEqual(8456, player.character.stats.current_mana)
+
+    def test_sim_arcane_missiles(self):
+        expected = ['']
+        character = get_character()
+        player = Actor(character=character, decision_model_class=ArcaneMissleSpam)
+        boss = Actor(character=get_boss(), decision_model_class=DoNothing)
+        sim = Simulation(player=player, boss=boss, end_of_simulation=11)
+        sim.run()
+
+        self.assertEqual(expected, [str(log_entry) for log_entry in sim.logs])
+        self.assertEqual(8456, player.character.stats.current_mana)
+
+    def test_sim_evocation(self):
+        expected = ['']
+        character = get_character()
+        player = Actor(character=character, decision_model_class=EvocateSpam)
+        boss = Actor(character=get_boss(), decision_model_class=DoNothing)
+        sim = Simulation(player=player, boss=boss, end_of_simulation=60)
         sim.run()
 
         self.assertEqual(expected, [str(log_entry) for log_entry in sim.logs])

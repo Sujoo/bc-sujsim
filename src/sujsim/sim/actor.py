@@ -7,7 +7,7 @@ from sujsim.core.spells.buff import Buff
 from sujsim.core.spells.buff_database import debuffs
 from sujsim.core.spells.buff_database.debuffs import create_gcd, CASTING_5_SECOND_RULE
 from sujsim.core.spells.spell_database.mage_spells import GCD_SPELL
-from sujsim.sim.event import MageCastEvent, Event, ManaRegenEvent, GainBuffEvent, LoseBuffEvent
+from sujsim.sim.event import MageCastEvent, Event, ManaRegenEvent, GainBuffEvent, LoseBuffEvent, DotEvent
 from sujsim.sim.sim_log import LogEntry
 
 
@@ -42,6 +42,9 @@ class Actor:
             if execute_now:
                 event.execute()
             else:
+                # Reset the DoT before reapplying
+                if isinstance(event, DotEvent):
+                    self.remove_dot_event_from_queue(event)
                 self.event_queue.append(event)
                 self.event_queue.sort(key=lambda x: x.time)
 
@@ -58,6 +61,15 @@ class Actor:
         found_event = None
         for search_event in self.event_queue:
             if isinstance(search_event, LoseBuffEvent) and search_event.buff.db_id == event.buff.db_id:
+                found_event = search_event
+                break
+        if found_event:
+            self.event_queue.remove(found_event)
+
+    def remove_dot_event_from_queue(self, event: DotEvent):
+        found_event = None
+        for search_event in self.event_queue:
+            if isinstance(search_event, DotEvent) and search_event.dot.db_id == event.dot.db_id and search_event.dot.name == event.dot.name:
                 found_event = search_event
                 break
         if found_event:

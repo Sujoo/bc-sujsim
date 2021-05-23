@@ -48,4 +48,4 @@ CALL_OF_THE_NEXUS = Buff(db_id=34320, name='Call of the Nexus', duration=10)
 
 INSIGHTFUL_EARTHSTORM_COOLDOWN = Buff(db_id=27521, name='Insightful Earthstorm Cooldown', duration=15)
 
-DEBUG = Buff(db_id=-777, name='Debug', stats=ItemStats(spell_haste_rating=100))
+DEBUG = Buff(db_id=-777, name='Debug', stats=ItemStats(spell_crit_rating=8000))

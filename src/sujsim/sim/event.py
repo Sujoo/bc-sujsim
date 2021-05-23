@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import copy
 from typing import TYPE_CHECKING
 
 from sujsim.core.spells.magic_school import MagicSchool
@@ -29,6 +31,7 @@ class Event:
         log_entry = LogEntry(log_type=log_type,
                              text=text,
                              time=self.time)
+        print(log_entry)
         self.target_actor.add_to_log(log_entry)
 
 
@@ -45,20 +48,52 @@ class WaitEvent(Event):
 class MageCastEvent(Event):
     def __init__(self, time: float, spell: Spell, source_actor: Actor, target_actor: Actor, spell_target: Actor):
         super().__init__(time=time, target_actor=target_actor, source_actor=source_actor)
-        self.spell = spell
+        self.spell = copy.deepcopy(spell)
         self.spell_target = spell_target
 
     def execute(self):
         super().execute()
 
-        # TODO: make channeling spells work
+        if self.spell.is_channeling:
+            self.spell.current_ticks += 1
+            self.spell.does_trigger_gcd = False
+
+        if self.spell.spell_type == MageSpells.EVOCATION:
+            self.source_actor.add_to_queue(ManaEvent(target_actor=self.target_actor,
+                                                     source_actor=self.target_actor,
+                                                     amount=self.target_actor.character.stats.max_mana * 0.15,
+                                                     gain=True),
+                                           execute_now=True)
+            if self.spell.current_ticks == 1:
+                self.source_actor.add_to_queue(GainBuffEvent(buff=debuffs.EVOCATION_COOLDOWN,
+                                                             target_actor=self.target_actor,
+                                                             source_actor=self.target_actor),
+                                               execute_now=True)
+            if self.spell.current_ticks < self.spell.max_ticks:
+                self.source_actor.add_to_queue(MageCastEvent(spell=self.spell,
+                                                             time=self.spell.cast_time / self.spell.max_ticks,
+                                                             source_actor=self.source_actor,
+                                                             target_actor=self.target_actor,
+                                                             spell_target=self.spell_target))
+        else:
+            self.execute_spell_cast()
+
+    def execute_spell_cast(self):
         cast_spell = self.source_actor.character.calculate_cast_spell(spell=self.spell, target=self.target_actor)
+        # Spells only cost mana when they are cast, not when channeled spells tick
+        if not self.spell.is_channeling or (self.spell.current_ticks == 1):
+            self.source_actor.add_to_queue(ManaEvent(target_actor=self.target_actor,
+                                                     source_actor=self.target_actor,
+                                                     amount=cast_spell.mana_cost,
+                                                     gain=False),
+                                           execute_now=True)
         # Apply self-buffs from spell execution
         if self.spell.spell_type == MageSpells.ARCANE_BLAST:
             self.source_actor.add_to_queue(GainBuffEvent(buff=combat_buffs.ARCANE_BLAST,
                                                          target_actor=self.target_actor,
                                                          source_actor=self.target_actor),
                                            execute_now=True)
+            # TODO
             """
             if config->tirisfal_4set and cast_spell.result == spell::CRIT)
                 onBuffGain(make_shared<buff::ArcaneMadness>());
@@ -66,11 +101,7 @@ class MageCastEvent(Event):
         super().add_log(log_type=LogType.LOG_SPELL, text="{}'s {} is a {}".format(self.source_actor.character.name,
                                                                                   cast_spell.spell_type.value,
                                                                                   cast_spell.result.name))
-        self.source_actor.add_to_queue(ManaEvent(target_actor=self.target_actor,
-                                                 source_actor=self.target_actor,
-                                                 amount=cast_spell.mana_cost,
-                                                 gain=False),
-                                       execute_now=True)
+
         if cast_spell.result == SpellResult.MISS:
             if self.source_actor.character.gear_stats.has_trinket(trinket.EYE_OF_MAGTHERIDON):
                 self.source_actor.add_to_queue(GainBuffEvent(buff=trinket.EYE_OF_MAGTHERIDON.buff,
@@ -82,7 +113,13 @@ class MageCastEvent(Event):
                                                        target_actor=self.spell_target,
                                                        gain=False,
                                                        cast_spell=cast_spell,
-                                                       time=self.time - self.spell_target.current_time))  # this needs to be the amount of time to wait until it hits
+                                                       time=self.time - self.spell_target.current_time))
+            if cast_spell.dot is not None:
+                dot = copy.deepcopy(cast_spell.dot)
+                self.spell_target.add_to_queue(DotEvent(source_actor=self.source_actor,
+                                                        target_actor=self.spell_target,
+                                                        dot=dot,
+                                                        time=(dot.tick_interval + self.time) - self.spell_target.current_time))
             # Do DoT checks
             # if spell has dot, add recurring health event to the boss, or add a cast event (can't be a cast event)
             # Combustion
@@ -121,19 +158,13 @@ class MageCastEvent(Event):
                                                                      target_actor=self.target_actor,
                                                                      source_actor=self.target_actor),
                                                        execute_now=True)
-            if cast_spell.spell_type == MagicSchool.FROST and self.source_actor.character.mage_talents.winters_chill:
+            if cast_spell.magic_school == MagicSchool.FROST and self.source_actor.character.mage_talents.winters_chill:
                 if self.source_actor.character.mage_talents.winters_chill == 5 or random.randrange(0,
-                4) < self.source_actor.character.mage_talents.winters_chill:
+                                                                                                   4) < self.source_actor.character.mage_talents.winters_chill:
                     self.spell_target.add_to_queue(GainBuffEvent(buff=debuffs.WINTERS_CHILL,
                                                                  target_actor=self.target_actor,
                                                                  source_actor=self.target_actor),
                                                    execute_now=True)
-            """
-            if cast_spell.id == spell::FIREBALL)
-                pushDot(make_shared<dot::Fireball>())
-            if cast_spell.id == spell::PYROBLAST)
-                pushDot(make_shared<dot::Pyroblast>())
-            """
 
             # 5% proc rate ?
             if self.source_actor.character.gear_stats.has_trinket(trinket.QUAGMIRRANS_EYE) and not self.source_actor.has_buff(
@@ -179,7 +210,8 @@ class MageCastEvent(Event):
                                                execute_now=True)
 
             # 5% proc rate, cannot refresh itself while up
-            if self.source_actor.character.gear_stats.has_ring(ring.WRATH_OF_CENARIUS) and not self.source_actor.has_buff(combat_buffs.SPELL_BLASTING) and random.randrange(0, 19) == 0:
+            if self.source_actor.character.gear_stats.has_ring(ring.WRATH_OF_CENARIUS) and not self.source_actor.has_buff(
+                    combat_buffs.SPELL_BLASTING) and random.randrange(0, 19) == 0:
                 self.source_actor.add_to_queue(GainBuffEvent(buff=combat_buffs.SPELL_BLASTING,
                                                              target_actor=self.target_actor,
                                                              source_actor=self.target_actor),
@@ -189,6 +221,7 @@ class MageCastEvent(Event):
                                                              source_actor=self.target_actor),
                                                execute_now=True)
 
+            # TODO
             """
             # 2% proc rate, mana-etched 4-set bonus
             if config->mana_etched_4set and random.randrange(0, 49) == 0:
@@ -236,11 +269,13 @@ class MageCastEvent(Event):
                                                                  source_actor=self.target_actor),
                                                    execute_now=True)
                 # 100% proc rate
-                if self.source_actor.character.gear_stats.has_trinket(trinket.THE_LIGHTNING_CAPACITOR) and not self.source_actor.has_buff(combat_buffs.LIGHTNING_CAPACITOR):
+                if self.source_actor.character.gear_stats.has_trinket(trinket.THE_LIGHTNING_CAPACITOR) and not self.source_actor.has_buff(
+                        combat_buffs.LIGHTNING_CAPACITOR):
                     self.source_actor.add_to_queue(GainBuffEvent(buff=combat_buffs.LIGHTNING_CAPACITOR,
                                                                  target_actor=self.target_actor,
                                                                  source_actor=self.target_actor),
                                                    execute_now=True)
+                    # TODO: Add code to fireLightningCapacitor
                 # 50% proc rate
                 if self.source_actor.character.gear_stats.has_trinket(trinket.ASHTONGUE_TALISMAN_MAGE) and random.randrange(0, 1) == 0:
                     self.source_actor.add_to_queue(GainBuffEvent(buff=combat_buffs.ASHTONGUE_TALISMAN,
@@ -248,14 +283,14 @@ class MageCastEvent(Event):
                                                                  source_actor=self.target_actor),
                                                    execute_now=True)
 
-                if cast_spell.spell_type == MagicSchool.FIRE and self.source_actor.character.mage_talents.ignite:
+                if cast_spell.magic_school == MagicSchool.FIRE and self.source_actor.character.mage_talents.ignite:
                     # addIgnite(spell)
                     pass
-                if (cast_spell.spell_type == MagicSchool.FIRE or cast_spell.spell_type == MagicSchool.FROST) and \
-                        self.source_actor.character.mage_talents.master_of_elements:
+                if cast_spell.magic_school == MagicSchool.FIRE or cast_spell.magic_school == MagicSchool.FROST and self.source_actor.character.mage_talents.master_of_elements:
                     self.source_actor.add_to_queue(ManaEvent(target_actor=self.target_actor,
                                                              source_actor=self.target_actor,
-                                                             amount=cast_spell.mana_cost * 0.1 * self.source_actor.character.mage_talents.master_of_elements,
+                                                             amount=round(cast_spell.mana_cost * 0.1 *
+                                                                          self.source_actor.character.mage_talents.master_of_elements),
                                                              gain=True),
                                                    execute_now=True)
 
@@ -266,7 +301,14 @@ class MageCastEvent(Event):
         self._execute_insightful_earthstorm_gem_proc()
         self._execute_blue_dragon_trinket_proc()
 
-        self.source_actor.queue_next_action()
+        if self.spell.is_channeling and self.spell.current_ticks < self.spell.max_ticks:
+            self.source_actor.add_to_queue(MageCastEvent(spell=self.spell,
+                                                         time=self.spell.cast_time / self.spell.max_ticks,
+                                                         source_actor=self.source_actor,
+                                                         target_actor=self.target_actor,
+                                                         spell_target=self.spell_target))
+        else:
+            self.source_actor.queue_next_action()
 
     def _execute_clearcasting(self):
         if self.source_actor.has_buff(combat_buffs.CLEARCAST):
@@ -317,10 +359,36 @@ class MageCastEvent(Event):
                                            execute_now=True)
 
 
+class DotEvent(Event):
+    def __init__(self, time: int, source_actor: Actor, target_actor: Actor, dot: Dot):
+        super().__init__(time=time, target_actor=target_actor, source_actor=source_actor)
+        self.dot = dot
+
+    def execute(self):
+        super().execute()
+        self.dot.current_tick += 1
+        self.target_actor.add_to_queue(HealthEvent(source_actor=self.source_actor,
+                                                   target_actor=self.target_actor,
+                                                   gain=False,
+                                                   cast_spell=CastSpell(spell_type=MageSpells.DOT,
+                                                                        rank=1,
+                                                                        result=SpellResult.HIT,
+                                                                        damage=self.dot.damage,
+                                                                        resist=0,
+                                                                        mana_cost=0,
+                                                                        magic_school=self.dot.magic_school),
+                                                   time=0))
+        if self.dot.current_tick <= self.dot.max_ticks:
+            self.target_actor.add_to_queue(DotEvent(source_actor=self.source_actor,
+                                                    target_actor=self.target_actor,
+                                                    dot=self.dot,
+                                                    time=self.dot.tick_interval))
+
+
 class ManaEvent(Event):
     def __init__(self, source_actor: Actor, target_actor: Actor, amount: int, gain: bool):
         super().__init__(time=0, target_actor=target_actor, source_actor=source_actor)
-        self.amount = amount
+        self.amount = round(amount)
         self.gain = gain
 
     def execute(self):
@@ -361,10 +429,11 @@ class ManaRegenEvent(Event):
         super().execute()
 
         mp_1 = self.target_actor.character.calculate_current_mana_regen_per_second()
+
         mana_to_add = mp_1 * self.seconds_of_regen
         self.target_actor.character.stats.current_mana += mana_to_add
-
         super().add_log(log_type=LogType.LOG_MANA, text='{} Mana Regen'.format(mana_to_add))
+
         self.target_actor.add_to_queue(ManaRegenEvent(2,
                                                       target_actor=self.target_actor,
                                                       source_actor=self.target_actor))

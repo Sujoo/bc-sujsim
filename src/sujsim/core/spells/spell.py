@@ -14,6 +14,9 @@ class MageSpells(Enum):
     FIRE_BLAST = 'Fire Blast'
     FAKE = 'Fake'
     ARCANE_MISSILES = 'Arcane Missiles'
+    DOT = 'DoT'
+    LIGHTNING_CAPACITOR = 'Lightning Capacitor'
+    EVOCATION = 'Evocation'
 
 
 class Spell:
@@ -26,7 +29,8 @@ class Spell:
                  coefficient: float,
                  mana_cost: int,
                  magic_school: MagicSchool,
-                 ticks: int = 0,
+                 max_ticks: int = 0,
+                 tick_interval: float = 2,
                  dot: Dot = None,
                  is_aoe: bool = False,
                  is_channeling: bool = False,
@@ -42,7 +46,9 @@ class Spell:
         self.coefficient = float(coefficient)
         self.mana_cost = mana_cost
         self.magic_school = magic_school
-        self.ticks = ticks
+        self.current_ticks = 0
+        self.max_ticks = max_ticks
+        self.tick_interval = tick_interval
         self.dot = dot
         self.is_aoe = is_aoe
         self.is_channeling = is_channeling
@@ -66,11 +72,12 @@ class CastSpell:
                  resist: float,
                  mana_cost: int,
                  magic_school: MagicSchool,
-                 ticks: int = 0,
+                 max_ticks: int = 0,
+                 tick_interval: float = 2,
                  dot: Dot = None,
                  is_aoe: bool = False,
                  is_channeling: bool = False,
-                 does_trigger_gcd: bool = False,
+                 does_trigger_gcd: bool = True,
                  is_binary: bool = False,
                  should_ignore_clearcast: bool = False):
         self.spell_type = spell_type
@@ -80,10 +87,14 @@ class CastSpell:
         self.resist = resist
         self.mana_cost = mana_cost
         self.magic_school = magic_school
-        self.ticks = ticks
+        self.current_ticks = 0
+        self.max_ticks = max_ticks
+        self.tick_interval = tick_interval
         self.dot = dot
         self.is_aoe = is_aoe
         self.is_channeling = is_channeling
         self.does_trigger_gcd = does_trigger_gcd
         self.is_binary = is_binary
         self.should_ignore_clearcast = should_ignore_clearcast
+
+
