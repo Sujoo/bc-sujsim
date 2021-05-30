@@ -1,4 +1,6 @@
+import copy
 import random
+import pandas as pd
 
 from sujsim.sim.actor import Actor
 
@@ -14,6 +16,7 @@ class Simulation:
         self.boss = boss
         self.actors = [player, boss]
         self.next_actor = None
+        self.end_of_simulation = end_of_simulation
         if seed:
             random.seed(seed)
 
@@ -38,3 +41,31 @@ class Simulation:
             return True
         else:
             return False
+
+    def get_dps(self, player: Actor) -> float:
+        return self.boss.damage_taken[player] / self.end_of_simulation
+
+
+class SimulationSet:
+    def __init__(self,
+                 player: Actor,
+                 boss: Actor,
+                 end_of_simulation: int):
+        self.logs = []  # List[LogEntry]
+        self.original_player = copy.deepcopy(player)
+        self.original_boss = copy.deepcopy(boss)
+        self.end_of_simulation = end_of_simulation
+
+    def run_simulations(self, count: int):
+        dps_list = []
+        executed = 0
+        while executed < count:
+            executed += 1
+            player = copy.deepcopy(self.original_player)
+            sim = Simulation(player=player,
+                             boss=copy.deepcopy(self.original_boss),
+                             end_of_simulation=self.end_of_simulation)
+            sim.run()
+            dps_list.append(sim.get_dps(player))
+        df = pd.Series(dps_list)
+        print(df.min(), df.max(), df.mean())

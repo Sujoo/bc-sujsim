@@ -5,7 +5,7 @@ class Enchant():
     def __init__(self,
                  db_id: int,
                  name: str,
-                 stats: ItemStats,
+                 stats: ItemStats = None,
                  phase: int = 1):
         self.db_id = db_id
         self.name = name

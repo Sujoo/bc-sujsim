@@ -9,7 +9,7 @@ class Dot:
                  damage: float,
                  max_ticks: int = 1,
                  current_tick: int = 0,
-                 tick_interval: float = 3,
+                 tick_interval: int = 3,
                  is_stackable: bool = False):
         self.db_id = db_id
         self.name = name
@@ -27,11 +27,13 @@ class Dot:
         return
 
 
+"""
 class Ignite(Dot):
     def __init__(self, damage: float):
         super(db_id=12848,
               name='Ignite',
               damage=damage,
+              magic_school = MagicSchool.FIRE,
               ticks=2,
               tick_interval=2,
               is_stackable=True)
@@ -44,3 +46,4 @@ class Ignite(Dot):
         else:
             self.damage
         tick = 0
+"""

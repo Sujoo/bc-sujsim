@@ -28,7 +28,7 @@ class PlayerStats:
                  current_health: int = 0,
                  base_mana: int = 0,
                  max_mana: int = 0,
-                 current_mana: int = 0):
+                 current_mana: int = -1):
         self.intellect = intellect
         self.stamina = stamina
         self.spirit = spirit
@@ -83,7 +83,8 @@ class PlayerStats:
                 spell_stats.spell_hit_rating += SpellStats.ONE_HIT
 
         self.max_mana = self.base_mana + (self.intellect * 15)
-        self.current_mana = self.max_mana
+        if self.current_mana == -1:
+            self.current_mana = self.max_mana
         self.max_health = self.base_health + (self.stamina * 10)
         self.current_health = self.max_health
 

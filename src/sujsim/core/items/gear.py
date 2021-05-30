@@ -53,11 +53,11 @@ class Gear:
             merge_item_stats(item.stats, gem.stats)
         return item
 
-    def add_enchant(self, enchants: List[Enchant]):
+    def add_enchant(self, enchant: Enchant):
         item = copy.deepcopy(self)
 
         # Add the enchant stats
-        for enchant in enchants:
+        if enchant.stats is not None:
             merge_item_stats(item.stats, enchant.stats)
 
         return item

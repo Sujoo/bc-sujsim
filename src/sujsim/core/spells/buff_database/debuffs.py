@@ -1,14 +1,23 @@
 import copy
 
 from sujsim.core.spells.buff import Buff
+from sujsim.core.spells.magic_school import MagicSchool
 from sujsim.core.stats.item_stats import ItemStats
+from sujsim.core.stats.spell_stats import SpellStats
 
 GLOBAL_COOLDOWN = Buff(db_id=-100, name="GCD", duration=1.5, max_stacks=1)
 CASTING_5_SECOND_RULE = Buff(db_id=-200, name="Casting 5 Second Rule", duration=5)
+
 FIRE_VULNERABILITY = Buff(db_id=22959, name='Fire Vulnerability', duration=30, max_stacks=5)
 WINTERS_CHILL = Buff(db_id=12579, name="Winter's Chill", duration=15, max_stacks=5)
+
 JUDGEMENT_OF_WISDOM = Buff(db_id=27164, name='Judgement of Wisdom', duration=20)
+JUDGEMENT_OF_THE_CRUSADER = Buff(db_id=27159, name='Judgement of the Crusader', stats=ItemStats(spell_power=219, impacted_schools=[MagicSchool.HOLY]),
+                                 duration=20)
+IMPROVED_SEAL_OF_THE_CRUSADER = Buff(db_id=20337, name='Improved Seal of the Crusader', stats=ItemStats(spell_crit_rating=SpellStats.ONE_CRIT*3), duration=20)
+
 MISERY = Buff(db_id=33195, name="Misery", duration=25)
+
 CURSE_OF_ELEMENTS = Buff(db_id=27228, name="Curse of the Elements", stats=ItemStats(arcane_resistance=-88, fire_resistance=-88, frost_resistance=-88,
                                                                                     shadow_resistance=-88), duration=300)
 

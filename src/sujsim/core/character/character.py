@@ -67,7 +67,6 @@ class Character(object):
                             buffs=self.buffs)
 
     def add_buff(self, buff: Buff) -> Buff:
-        buff_to_add = None
         if self.has_buff(buff):
             buff_to_add = self.get_buff(buff)
             buff_to_add.add_stack()
@@ -83,8 +82,7 @@ class Character(object):
         buff_to_remove = self.get_buff(buff)
         if buff_to_remove:
             self.buffs.remove(buff_to_remove)
-
-        self.reset_stats_if_necessary(buff_to_remove)
+            self.reset_stats_if_necessary(buff_to_remove)
 
     def reset_stats_if_necessary(self, buff: Buff):
         if buff.stats is not None:
@@ -200,22 +198,24 @@ class Character(object):
     def calculate_spell_crit_chance(self, base_crit_chance: float, spell: Spell, target: Actor) -> float:
         final_crit_chance = base_crit_chance
         if spell.spell_type == MageSpells.ARCANE_BLAST:
-            final_crit_chance += self.mage_talents.arcane_impact * 2
+            final_crit_chance += (self.mage_talents.arcane_impact * 2) / 100
         if spell.spell_type == MageSpells.SCORCH:
-            final_crit_chance += self.mage_talents.incinerate * 2
+            final_crit_chance += (self.mage_talents.incinerate * 2) / 100
         if spell.spell_type == MageSpells.SCORCH:
-            final_crit_chance += self.mage_talents.empowered_frostbolt
+            final_crit_chance += self.mage_talents.empowered_frostbolt / 100
 
         if self.has_buff(combat_buffs.CLEARCAST):
-            final_crit_chance += self.mage_talents.arcane_potency * 10
+            final_crit_chance += (self.mage_talents.arcane_potency * 10) / 100
         if self.has_buff(combat_buffs.COMBUSTION) and spell.magic_school == MagicSchool.FIRE:
-            final_crit_chance += self.get_buff(combat_buffs.COMBUSTION).stacks * 10
+            final_crit_chance += (self.get_buff(combat_buffs.COMBUSTION).stacks * 10) / 100
 
         if spell.magic_school == MagicSchool.FIRE:
-            final_crit_chance += self.mage_talents.critical_mass * 2
-            final_crit_chance += self.mage_talents.pyromaniac
+            final_crit_chance += (self.mage_talents.critical_mass * 2) / 100
+            final_crit_chance += self.mage_talents.pyromaniac / 100
         if spell.magic_school == MagicSchool.FROST and target.has_buff(debuffs.WINTERS_CHILL):
-            final_crit_chance += target.get_buff(debuffs.WINTERS_CHILL).stacks * 2
+            final_crit_chance += (target.get_buff(debuffs.WINTERS_CHILL).stacks * 2) / 100
+        if target.has_buff(debuffs.IMPROVED_SEAL_OF_THE_CRUSADER):
+            final_crit_chance += 3 / 100  # TODO: have this use the spell stats from the debuff
 
         return final_crit_chance
 
@@ -224,6 +224,8 @@ class Character(object):
         damage = random.randint(spell.min_damage, spell.max_damage)
 
         spell_power = spell_stats.spell_power
+        if self.has_buff(player_buffs.IMPROVED_DIVINE_SPIRIT):
+            spell_power += self.stats.spirit * 0.1
         spell_coefficient = spell.coefficient
         if spell.spell_type == MageSpells.ARCANE_MISSILES and self.mage_talents.empowered_arcane_missiles:
             spell_coefficient += self.mage_talents.empowered_arcane_missiles * 0.15
@@ -246,8 +248,11 @@ class Character(object):
             multiplier *= 1.05
         if target.has_buff(debuffs.CURSE_OF_ELEMENTS) and (spell.magic_school == MagicSchool.FROST or spell.magic_school == MagicSchool.FIRE or
                                                            spell.magic_school == MagicSchool.ARCANE or spell.magic_school == MagicSchool.SHADOW):
+            # If warlock has it talented, it should be 1.3
             multiplier *= 1.1
-        multiplier = 1 + self.mage_talents.playing_with_fire * 0.01
+
+        multiplier *= 1 + self.mage_talents.arcane_instability * 0.01
+        multiplier *= 1 + self.mage_talents.playing_with_fire * 0.01
         if spell.magic_school == MagicSchool.FROST:
             multiplier *= 1 + self.mage_talents.piercing_ice * 0.02
             multiplier *= 1 + self.mage_talents.arctic_winds * 0.01
@@ -260,9 +265,9 @@ class Character(object):
 
         if self.has_buff(combat_buffs.ARCANE_POWER):
             multiplier *= 1.3
+
         if spell.spell_type == MageSpells.ARCANE_BLAST and False:  # TODO: and config->tirisfal_2set
             multiplier *= 1.2
-
         if (spell.spell_type == MageSpells.ARCANE_MISSILES or spell.spell_type == MageSpells.FROSTBOLT or spell.spell_type == MageSpells.FIREBALL) and False:
             # and config->tempest_4set
             multiplier *= 1.05
@@ -283,7 +288,8 @@ class Character(object):
 
         return (base - 1) * talents + 1
 
-    def calculate_spell_resist(self, spell: Spell, damage: float) -> float:
+    @staticmethod
+    def calculate_spell_resist(spell: Spell, damage: float) -> float:
         if spell.is_binary:
             return 0.0
         # No confirmed formulas or resistance tables can be found
